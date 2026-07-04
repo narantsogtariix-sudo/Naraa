@@ -1,0 +1,109 @@
+{
+  "entities": {
+    "ContactRequest": {
+      "title": "ContactRequest",
+      "description": "User requests for contact or product inquiry",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Customer name"
+        },
+        "phone": {
+          "type": "string",
+          "description": "Customer phone number"
+        },
+        "email": {
+          "type": "string",
+          "description": "Customer email (optional)"
+        },
+        "productType": {
+          "type": "string",
+          "description": "Type of product inquiring",
+          "enum": ["shoes", "clothes", "toonhub", "other"]
+        },
+        "message": {
+          "type": "string",
+          "description": "Additional message details"
+        },
+        "status": {
+          "type": "string",
+          "description": "Request status",
+          "enum": ["Unread", "Contacted", "Resolved"]
+        },
+        "createdAt": {
+          "type": "object",
+          "description": "Firestore Server Timestamp"
+        },
+        "notes": {
+          "type": "array",
+          "description": "Internal notes added by admin"
+        }
+      },
+      "required": ["name", "phone", "status", "notes"]
+    },
+    "Order": {
+      "title": "Order",
+      "description": "Product order details",
+      "type": "object",
+      "properties": {
+        "orderId": {
+          "type": "string",
+          "description": "Human readable order number"
+        },
+        "customerName": {
+          "type": "string",
+          "description": "Customer name"
+        },
+        "email": {
+          "type": "string",
+          "description": "Customer email (optional)"
+        },
+        "phone": {
+          "type": "string",
+          "description": "Customer phone number"
+        },
+        "product": {
+          "type": "string",
+          "description": "Product title"
+        },
+        "price": {
+          "type": "string",
+          "description": "Price string"
+        },
+        "quantity": {
+          "type": "integer",
+          "description": "Product quantity"
+        },
+        "message": {
+          "type": "string",
+          "description": "Customer message (optional)"
+        },
+        "status": {
+          "type": "string",
+          "description": "Order status",
+          "enum": ["New", "Processing", "Delivered", "Cancelled"]
+        },
+        "createdAt": {
+          "type": "object",
+          "description": "Firestore Server Timestamp"
+        },
+        "notes": {
+          "type": "array",
+          "description": "Internal notes added by admin"
+        }
+      },
+      "required": ["orderId", "customerName", "phone", "product", "price", "quantity", "status", "notes"]
+    }
+  },
+  "firestore": {
+    "contact_requests/{requestId}": {
+      "schema": "ContactRequest",
+      "description": "Collection of contact requests"
+    },
+    "orders/{orderId}": {
+      "schema": "Order",
+      "description": "Collection of customer product orders"
+    }
+  }
+}

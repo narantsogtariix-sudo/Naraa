@@ -1,0 +1,113 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Global Safety Net (default-deny catch-all)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper Functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.email != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Contact Requests Rules
+    match /contact_requests/{requestId} {
+      allow get: if isAdmin();
+      allow list: if isAdmin();
+      
+      allow create: if (
+        // Validate document ID path variable if custom
+        isValidId(requestId) &&
+        // Validate document fields
+        incoming().name is string && incoming().name.size() > 0 && incoming().name.size() <= 100 &&
+        incoming().phone is string && incoming().phone.size() > 0 && incoming().phone.size() <= 20 &&
+        (!('email' in incoming()) || incoming().email == null || (incoming().email is string && incoming().email.size() <= 100)) &&
+        (!('message' in incoming()) || incoming().message == null || (incoming().message is string && incoming().message.size() <= 1000)) &&
+        incoming().productType is string && incoming().productType in ['shoes', 'clothes', 'toonhub', 'other'] &&
+        incoming().status == 'Unread' &&
+        incoming().notes == [] &&
+        incoming().createdAt == request.time
+      );
+
+      allow update: if (
+        isAdmin() &&
+        isValidId(requestId) &&
+        incoming().name == existing().name &&
+        incoming().phone == existing().phone &&
+        incoming().email == existing().email &&
+        incoming().productType == existing().productType &&
+        incoming().createdAt == existing().createdAt &&
+        (
+          // Action 1: Update Status
+          (incoming().status != existing().status && incoming().status in ['Unread', 'Contacted', 'Resolved'] && incoming().notes == existing().notes && incoming().diff(existing()).affectedKeys().hasOnly(['status'])) ||
+          // Action 2: Add Internal Note
+          (incoming().status == existing().status && incoming().notes != existing().notes && incoming().diff(existing()).affectedKeys().hasOnly(['notes']))
+        )
+      );
+
+      allow delete: if isAdmin() && isValidId(requestId);
+    }
+
+    // Orders Rules
+    match /orders/{orderId} {
+      allow get: if isAdmin();
+      allow list: if isAdmin();
+      
+      allow create: if (
+        // Validate document ID path variable if custom
+        isValidId(orderId) &&
+        // Validate document fields
+        incoming().orderId is string && incoming().orderId.size() > 0 && incoming().orderId.size() <= 20 &&
+        incoming().customerName is string && incoming().customerName.size() > 0 && incoming().customerName.size() <= 100 &&
+        incoming().phone is string && incoming().phone.size() > 0 && incoming().phone.size() <= 20 &&
+        (!('email' in incoming()) || incoming().email == null || (incoming().email is string && incoming().email.size() <= 100)) &&
+        (!('message' in incoming()) || incoming().message == null || (incoming().message is string && incoming().message.size() <= 1000)) &&
+        incoming().product is string && incoming().product.size() > 0 && incoming().product.size() <= 200 &&
+        incoming().price is string && incoming().price.size() > 0 && incoming().price.size() <= 50 &&
+        incoming().quantity is int && incoming().quantity >= 1 && incoming().quantity <= 1000 &&
+        incoming().status == 'New' &&
+        incoming().notes == [] &&
+        incoming().createdAt == request.time
+      );
+
+      allow update: if (
+        isAdmin() &&
+        isValidId(orderId) &&
+        incoming().orderId == existing().orderId &&
+        incoming().customerName == existing().customerName &&
+        incoming().phone == existing().phone &&
+        incoming().email == existing().email &&
+        incoming().product == existing().product &&
+        incoming().price == existing().price &&
+        incoming().quantity == existing().quantity &&
+        incoming().createdAt == existing().createdAt &&
+        (
+          // Action 1: Update Status
+          (incoming().status != existing().status && incoming().status in ['New', 'Processing', 'Delivered', 'Cancelled'] && incoming().notes == existing().notes && incoming().diff(existing()).affectedKeys().hasOnly(['status'])) ||
+          // Action 2: Add Internal Note
+          (incoming().status == existing().status && incoming().notes != existing().notes && incoming().diff(existing()).affectedKeys().hasOnly(['notes']))
+        )
+      );
+
+      allow delete: if isAdmin() && isValidId(orderId);
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "Naraa - Clothing, Shoes and TOONHUB Figurines",
+  "description": "High-quality, affordable clothing, footwear, and 3D TOONHUB figurine collectibles at best prices in Mongolia.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
